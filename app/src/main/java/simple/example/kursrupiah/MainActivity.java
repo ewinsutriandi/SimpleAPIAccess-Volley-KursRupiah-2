@@ -5,7 +5,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -21,63 +23,36 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.text.DecimalFormat;
-import java.text.DecimalFormatSymbols;
-import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.util.Locale;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    Button btnUSD,btnEUR,btnJPY,btnSGD,btnAUD;
-    TextView txMataUang,txNilaiTukar,txTanggalKurs;
+    TextView tglKurs;
     FloatingActionButton btnRefresh;
-    View lyCurrency;
     ProgressBar loadingIndicator;
-    private String mataUang = "USD";
     JSONObject kursTerbaru;
-    DecimalFormat formatUang;
+    ListView listNilaiKurs;
+    ArrayAdapter<NilaiKurs> adapterKurs;
     @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         inisialisasiView();
-        siapkanFormatUang();
         ambilDataKurs();
     }
 
-    private void siapkanFormatUang() {
-        formatUang = new DecimalFormat("#,###.00");
-        DecimalFormatSymbols s = new DecimalFormatSymbols();
-        s.setGroupingSeparator('.');
-        s.setDecimalSeparator(',');
-        formatUang.setDecimalFormatSymbols(s);
-    }
 
     private void inisialisasiView() {
-        txMataUang = findViewById(R.id.txMataUang);
-        txNilaiTukar = findViewById(R.id.txNilaiTukarIDR);
-        txTanggalKurs = findViewById(R.id.tglKurs);
-        lyCurrency = findViewById(R.id.lyCurrency);
+        tglKurs = findViewById(R.id.tglKurs);
         loadingIndicator = findViewById(R.id.loadingIndicator);
-
-        btnAUD = findViewById(R.id.btnAUD);
-        btnAUD.setOnClickListener(view -> tampilkanDataKurs("AUD"));
-
-        btnEUR = findViewById(R.id.btnEUR);
-        btnEUR.setOnClickListener(view -> tampilkanDataKurs("EUR"));
-
-        btnJPY = findViewById(R.id.btnJPY);
-        btnJPY.setOnClickListener(view -> tampilkanDataKurs("JPY"));
-
-        btnSGD = findViewById(R.id.btnSGD);
-        btnSGD.setOnClickListener(view -> tampilkanDataKurs("SGD"));
-
-        btnUSD = findViewById(R.id.btnUSD);
-        btnUSD.setOnClickListener(view -> tampilkanDataKurs("USD"));
-
         btnRefresh = findViewById(R.id.btnRefresh);
         btnRefresh.setOnClickListener(view -> ambilDataKurs());
+        listNilaiKurs = findViewById(R.id.list_nilai_kurs);
+        adapterKurs = new KursAdapter(this,new ArrayList<>());;
+        listNilaiKurs.setAdapter(adapterKurs);
     }
 
     private void ambilDataKurs() {
@@ -89,13 +64,14 @@ public class MainActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         Log.d("MAIN",response.toString());
                         kursTerbaru = response;
-                        tampilkanDataKurs(mataUang);
-                        loadingIndicator.setVisibility(View.INVISIBLE);
+
+                        refreshView();
+                        loadingIndicator.setVisibility(View.GONE);
                     }
                 }, new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        loadingIndicator.setVisibility(View.INVISIBLE);
+                        loadingIndicator.setVisibility(View.GONE);
                         Toast.makeText(getApplicationContext(),"Gagal mengambil data",Toast.LENGTH_SHORT).show();
                     }
                 });
@@ -103,21 +79,24 @@ public class MainActivity extends AppCompatActivity {
         queue.add(jsonObjectRequest);
     }
 
-    private void tampilkanDataKurs(String mataUang) {
-        this.mataUang = mataUang;
-        // tampilkan mata uang terpilih
-        txMataUang.setText("1 "+mataUang);
-        try { // try catch untuk antisipasi error saat parsing JSON
-            // tampilkan tanggal
-            txTanggalKurs.setText(kursTerbaru.getString("date"));
-            // siapkan kemudian tampilkan nilai tukar
+    private void refreshView() {
+        adapterKurs.clear();
+        try {
+            tglKurs.setText(kursTerbaru.getString("date"));
+            List<NilaiKurs> nilaiKursList = new ArrayList<>();
             JSONObject rates = kursTerbaru.getJSONObject("rates");
-            double nilaiTukar = 1 / rates.getDouble(mataUang);
-            txNilaiTukar.setText(formatUang.format(nilaiTukar)+" IDR");
+            for (Iterator<String> it = rates.keys(); it.hasNext(); ) {
+                String mataUang = it.next();
+                double nilaiTukar =  1/rates.getDouble(mataUang);
+                NilaiKurs nilaiKurs = new NilaiKurs(mataUang,nilaiTukar);
+                nilaiKursList.add(nilaiKurs);
+            }
+            adapterKurs.addAll(nilaiKursList);
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
     }
+
 
 }

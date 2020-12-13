@@ -6,7 +6,7 @@ android {
     compileSdkVersion 29
 
     defaultConfig {
-        applicationId "simple.example.kursrupiah"
+        applicationId "simple.example.kursrupiahlistv"
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
