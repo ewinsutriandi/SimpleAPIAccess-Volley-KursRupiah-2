@@ -56,15 +56,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void ambilDataKurs() {
+        Log.d("MAIN","Ambil data kurs");
         loadingIndicator.setVisibility(View.VISIBLE);
-        String baseURL = "https://api.exchangeratesapi.io/latest?base=IDR";
+        String baseURL = "https://api.exchangerate-api.com/v4/latest/IDR";
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
                 (Request.Method.GET, baseURL, null, new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
                         Log.d("MAIN",response.toString());
                         kursTerbaru = response;
-
                         refreshView();
                         loadingIndicator.setVisibility(View.GONE);
                     }
@@ -72,7 +72,8 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onErrorResponse(VolleyError error) {
                         loadingIndicator.setVisibility(View.GONE);
-                        Toast.makeText(getApplicationContext(),"Gagal mengambil data",Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getApplicationContext(),
+                                "Gagal mengambil data",Toast.LENGTH_SHORT).show();
                     }
                 });
         RequestQueue queue = Volley.newRequestQueue(this);
@@ -80,6 +81,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refreshView() {
+        Log.d("MAIN","Refresh tampilan kurs");
         adapterKurs.clear();
         try {
             tglKurs.setText(kursTerbaru.getString("date"));
